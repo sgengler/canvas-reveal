@@ -158,8 +158,8 @@ function setupCanvases() {
 		var coords = getLocalCoords(canvasEl, getEventCoords(e));
 
     points.push({
-      x: local.x,
-      y: local.y,
+      x: coords.x,
+      y: coords.y,
       time: Date.now()
     });
 
