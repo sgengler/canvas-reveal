@@ -3,12 +3,22 @@
 (function() {
 
 var image = { // back and front images
-	'back': { 'url':'images/background.jpg', 'img':null },
-	'front': { 'url':'images/foreground.jpg', 'img':null }
-};
+		'back': { 'url':'images/background.jpg', 'img':null },
+		'front': { 'url':'images/foreground.jpg', 'img':null }
+	},
+	canvas = {'temp':null, 'draw':null},
+	$canvas,
+	canvasEl,
+	mouseDown = false,
+	points = [],
+	winWidth,
+	winHeight,
+	imgWidth,
+	imgHeight;
 
-var canvas = {'temp':null, 'draw':null}; // temp and draw canvases
-var mouseDown = false;
+var options = {
+	fadeTimer: 1000
+}
 
 
 function supportsCanvas() {
@@ -17,7 +27,7 @@ function supportsCanvas() {
 
 function getEventCoords(ev) {
 	var first, coords = {};
-	var origEv = ev.originalEvent; // get from jQuery
+	var origEv = ev.originalEvent;
 
 	if (origEv.changedTouches != undefined) {
 		first = origEv.changedTouches[0];
@@ -27,7 +37,6 @@ function getEventCoords(ev) {
 		coords.pageX = ev.pageX;
 		coords.pageY = ev.pageY;
 	}
-
 	return coords;
 }
 
@@ -45,68 +54,40 @@ function getLocalCoords(elem, coords) {
 
 function recompositeCanvases() {
 	var main = $('#maincanvas').get(0);
-	var drawthumb = $('#drawthumb').get(0);
-	var tempthumb = $('#tempthumb').get(0);
 	var tempctx = canvas.temp.getContext('2d');
 	var mainctx = main.getContext('2d');
 
-	// Step 1: clear the temp
-	canvas.temp.width = canvas.temp.width; // resizing clears
+	canvas.temp.width = canvas.temp.width;
 
-	// Step 2: stamp the draw on the temp (source-over)
 	tempctx.drawImage(canvas.draw, 0, 0, canvas.temp.width, canvas.temp.height);
-
-	// Step 3: stamp the background on the temp (!! source-atop mode !!)
 	tempctx.globalCompositeOperation = 'source-atop';
 	tempctx.drawImage(image.back.img, 0, 0, canvas.temp.width, canvas.temp.height);
-
-	// Step 4: stamp the foreground on the display canvas (source-over)
 	mainctx.drawImage(image.front.img, 0, 0, canvas.temp.width, canvas.temp.height);
-
-	// Step 5: stamp the temp on the display canvas (source-over)
 	mainctx.drawImage(canvas.temp, 0, 0, canvas.temp.width, canvas.temp.height);
-
 }
 
-var points=[];
-
-
-
-/**
- * Draw a scratch line
- *
- * @param can the canvas
- * @param x,y the coordinates
- * @param fresh start a new line if true
- */
-function scratchLine(can) {
+function setPoints(can) {
 
   var now = Date.now();
 
-  var fadeTimer = 1000,
-    firstPoint = null;
-
   for (var i = 0; i < points.length; i++) {
-    if(points[i].time > (now - fadeTimer)) {
+    if(points[i].time > (now - options.fadeTimer)) {
       firstPoint = i;
+			points = points.splice(i - points.length);
       break;
     }
   }
 
-  if(firstPoint) {
-    points = points.splice(firstPoint - points.length);
-  }
-
-  var totalPoints = points.length;
-	var ctx = can.getContext('2d');
+  var totalPoints = points.length,
+		ctx = can.getContext('2d');
 
 	ctx.lineCap = ctx.lineJoin = 'round';
   ctx.shadowBlur=30;
   ctx.shadowColor="black";
-	ctx.strokeStyle = '#f00'; // can be any opaque color
-
+	ctx.strokeStyle = '#f00'; // any color
   ctx.clearRect(0,0,can.width,can.height);
-  if(totalPoints < 2) {return;}
+
+  if(totalPoints < 2) {return;} //making sure the points fade out completely
 
   for(var i=1;i<points.length;i++){
     var lineW = Math.sqrt(Math.pow(points[i].x - points[i - 1].x, 2) + Math.pow(points[i].y - points[i - 1].y, 2));
@@ -118,40 +99,37 @@ function scratchLine(can) {
     ctx.lineTo(points[i].x, points[i].y);
     ctx.stroke()
   }
-	ctx.stroke();
 }
 
-var c;
 
 function setCanvasSize() {
-	c = $('#maincanvas').get(0);
+	canvasEl = $canvas.get(0);
 
-	// set the width and height of the main canvas from the first image
-	// (assuming both images are the same dimensions)
+	winWidth = $(window).width();
+	winHeight = $(window).height();
 
-	var winWidth = $(window).width(),
-		winHeight = $(window).height(),
-		winMax = Math.max(winWidth, winHeight),
-		winMin = Math.min(winWidth, winHeight);
 
-	imgRatio = image.back.img.width / image.back.img.height;
-	winRatio = winWidth / winHeight;
+	var imgRatio = image.back.img.width / image.back.img.height,
+		winRatio = winWidth / winHeight;
+
+	canvasEl.width = winWidth;
+	canvasEl.height = winHeight;
 
 
 	if(imgRatio < winRatio) {
-		c.width = winWidth;
-	  c.height = c.width * (image.back.img.height / image.back.img.width);
+		canvasEl.width = winWidth;
+	  canvasEl.height = canvasEl.width * (image.back.img.height / image.back.img.width);
 	} else {
-		c.height = winHeight;
-	  c.width = c.height * (image.back.img.width / image.back.img.height);
+		canvasEl.height = winHeight;
+	  canvasEl.width = canvasEl.height * (image.back.img.width / image.back.img.height);
 	}
 
 	// create the temp and draw canvases, and set their dimensions
 	// to the same as the main canvas:
 	canvas.temp = document.createElement('canvas');
 	canvas.draw = document.createElement('canvas');
-	canvas.temp.width = canvas.draw.width = c.width;
-	canvas.temp.height = canvas.draw.height = c.height;
+	canvas.temp.width = canvas.draw.width = canvasEl.width;
+	canvas.temp.height = canvas.draw.height = canvasEl.height;
 
 	// draw the stuff to start
 	recompositeCanvases();
@@ -163,23 +141,21 @@ $(window).on('resize', setCanvasSize);
  * Set up the main canvas and listeners
  */
 function setupCanvases() {
+	$canvas = $('#maincanvas');
 	setCanvasSize();
 
-	/**
-	 * On mouse down, draw a line starting fresh
-	 */
 	function mousedown_handler(e) {
-		var local = getLocalCoords(c, getEventCoords(e));
+		var coords = getLocalCoords(canvasEl, getEventCoords(e));
 		mouseDown = true;
 
-		scratchLine(canvas.draw, local.x, local.y, true);
+		setPoints(canvas.draw, coords.x, coords.y, true);
 		recompositeCanvases();
 
 		return false;
 	};
 
   function mousemove_handler(e) {
-		var local = getLocalCoords(c, getEventCoords(e));
+		var coords = getLocalCoords(canvasEl, getEventCoords(e));
 
     points.push({
       x: local.x,
@@ -192,56 +168,35 @@ function setupCanvases() {
 
   function animate() {
     if(!mouseDown && points.length < 2) {return}
-    requestAnimationFrame(animate);
-    scratchLine(canvas.draw);
+    reqAF(animate);
+    setPoints(canvas.draw);
     recompositeCanvases();
   }
 
-	/**
-	 * On mouse move, if mouse down, draw a line
-	 *
-	 * We do this on the window to smoothly handle mousing outside
-	 * the canvas
-	 */
 	function mouseover_handler(e) {
     mouseDown = true;
 		animate();
 	};
 
-	/**
-	 * On mouseup.  (Listens on window to catch out-of-canvas events.)
-	 */
 	function mouseout_handler(e) {
 		if (mouseDown) {
 			mouseDown = false;
 			return false;
 		}
-		return true;
 	};
 
-	$('#maincanvas').on('mouseover', mouseover_handler)
+	$canvas.on('mouseover', mouseover_handler)
     .on('mousemove', mousemove_handler)
     .on('mouseout', mouseout_handler)
 		.on('touchstart', mousedown_handler);
 }
 
-/**
- * Set up the DOM when loading is complete
- */
 function loadingComplete() {
-	$('#loading').hide();
-	$('#main').show();
+	//load stuff here
 }
 
-function reqAF() {
-    return window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || window.oRequestAnimationFrame || window.msRequestAnimationFrame || function(timer) {
-        window.setTimeout(timer, 10);
-    }
-}
+var reqAF = requestAnimationFrame || webkitRequestAnimationFrame || mozRequestAnimationFrame || oRequestAnimationFrame || msRequestAnimationFrame || function(timer) {setTimeout(timer, 10)}
 
-/**
- * Handle loading of needed image resources
- */
 function loadImages() {
 	var loadCount = 0;
 	var loadTotal = 0;
@@ -256,33 +211,23 @@ function loadImages() {
 		}
 	}
 
-	for (k in image) if (image.hasOwnProperty(k))
-		loadTotal++;
-
-	for (k in image) if (image.hasOwnProperty(k)) {
-		image[k].img = document.createElement('img'); // image is global
-		$(image[k].img).on('load', imageLoaded);
-		image[k].img.src = image[k].url;
+	for (side in image) {
+		if (image.hasOwnProperty(side)) {
+			loadTotal++;
+		}
 	}
+
+	for (side in image) if (image.hasOwnProperty(side)) {
+		image[side].img = document.createElement('img'); // image is global
+		$(image[side].img).on('load', imageLoaded);
+		image[side].img.src = image[side].url;
+	}
+
 }
 
-/**
- * Handle page load
- */
 $(function() {
 	if (supportsCanvas()) {
 		loadImages();
-
-		$('#resetbutton').on('click', function() {
-				// clear the draw canvas
-				canvas.draw.width = canvas.draw.width;
-				recompositeCanvases()
-
-				return false;
-			});
-	} else {
-		$('#loading').hide();
-		$('#lamebrowser').show();
 	}
 });
 
