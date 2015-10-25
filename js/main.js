@@ -80,9 +80,10 @@ var points=[];
  * @param fresh start a new line if true
  */
 function scratchLine(can) {
+
   var now = Date.now();
 
-  var fadeTimer = 500,
+  var fadeTimer = 1000,
     firstPoint = null;
 
   for (var i = 0; i < points.length; i++) {
@@ -97,8 +98,6 @@ function scratchLine(can) {
   }
 
   var totalPoints = points.length;
-
-
 	var ctx = can.getContext('2d');
 
 	ctx.lineCap = ctx.lineJoin = 'round';
@@ -107,6 +106,7 @@ function scratchLine(can) {
 	ctx.strokeStyle = '#f00'; // can be any opaque color
 
   ctx.clearRect(0,0,can.width,can.height);
+  if(totalPoints < 2) {return;}
 
   for(var i=1;i<points.length;i++){
     var lineW = Math.sqrt(Math.pow(points[i].x - points[i - 1].x, 2) + Math.pow(points[i].y - points[i - 1].y, 2));
@@ -121,16 +121,30 @@ function scratchLine(can) {
 	ctx.stroke();
 }
 
-/**
- * Set up the main canvas and listeners
- */
-function setupCanvases() {
-	var c = $('#maincanvas').get(0);
+var c;
+
+function setCanvasSize() {
+	c = $('#maincanvas').get(0);
 
 	// set the width and height of the main canvas from the first image
 	// (assuming both images are the same dimensions)
 
-  c.height = c.width * (image.back.img.height / image.back.img.width);
+	var winWidth = $(window).width(),
+		winHeight = $(window).height(),
+		winMax = Math.max(winWidth, winHeight),
+		winMin = Math.min(winWidth, winHeight);
+
+	imgRatio = image.back.img.width / image.back.img.height;
+	winRatio = winWidth / winHeight;
+
+
+	if(imgRatio < winRatio) {
+		c.width = winWidth;
+	  c.height = c.width * (image.back.img.height / image.back.img.width);
+	} else {
+		c.height = winHeight;
+	  c.width = c.height * (image.back.img.width / image.back.img.height);
+	}
 
 	// create the temp and draw canvases, and set their dimensions
 	// to the same as the main canvas:
@@ -139,9 +153,17 @@ function setupCanvases() {
 	canvas.temp.width = canvas.draw.width = c.width;
 	canvas.temp.height = canvas.draw.height = c.height;
 
-
 	// draw the stuff to start
 	recompositeCanvases();
+}
+
+$(window).on('resize', setCanvasSize);
+
+/**
+ * Set up the main canvas and listeners
+ */
+function setupCanvases() {
+	setCanvasSize();
 
 	/**
 	 * On mouse down, draw a line starting fresh
@@ -201,12 +223,6 @@ function setupCanvases() {
     .on('mousemove', mousemove_handler)
     .on('mouseout', mouseout_handler)
 		.on('touchstart', mousedown_handler);
-
-	// $(document).on('mousemove', mousemove_handler);
-	// $(document).on('touchmove', mousemove_handler);
-  //
-	// $(document).on('mouseout', mouseup_handler);
-	// $(document).on('touchend', mouseup_handler);
 }
 
 /**
