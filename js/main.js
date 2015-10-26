@@ -124,6 +124,11 @@ function setCanvasSize() {
 	  canvasEl.width = canvasEl.height * (image.back.img.width / image.back.img.height);
 	}
 
+	$canvas.css({
+		'margin-left': -(canvasEl.width - winWidth) / 2,
+		'margin-top': -(canvasEl.height - winHeight) / 2
+	})
+
 	// create the temp and draw canvases, and set their dimensions
 	// to the same as the main canvas:
 	canvas.temp = document.createElement('canvas');
@@ -185,10 +190,9 @@ function setupCanvases() {
 		}
 	};
 
-	$canvas.on('mouseover', mouseover_handler)
-    .on('mousemove', mousemove_handler)
-    .on('mouseout', mouseout_handler)
-		.on('touchstart', mousedown_handler);
+	$canvas.on('mouseover mousedown touchstart', mouseover_handler)
+    .on('mousemove touchmove', mousemove_handler)
+    .on('mouseout mouseup touchend', mouseout_handler)
 }
 
 function loadingComplete() {
