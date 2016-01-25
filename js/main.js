@@ -18,7 +18,7 @@ var image = { // back and front images
 
 var options = {
 	fadeTimer: 1000,
-	clearWipe: true
+	clearSwipe: true
 }
 
 
