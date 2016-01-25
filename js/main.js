@@ -17,7 +17,8 @@ var image = { // back and front images
 	imgHeight;
 
 var options = {
-	fadeTimer: 1000
+	fadeTimer: 1000,
+	clearWipe: true
 }
 
 
@@ -66,8 +67,7 @@ function recompositeCanvases() {
 	mainctx.drawImage(canvas.temp, 0, 0, canvas.temp.width, canvas.temp.height);
 }
 
-function setPoints(can) {
-
+function setPoints(can, clearSwipe) {
   var now = Date.now();
 
   for (var i = 0; i < points.length; i++) {
@@ -84,7 +84,11 @@ function setPoints(can) {
   ctx.shadowBlur=30;
   ctx.shadowColor="black";
 	ctx.strokeStyle = '#f00'; // any color
-  ctx.clearRect(0,0,can.width,can.height);
+
+	if(clearSwipe) {
+		ctx.clearRect(0,0,can.width,can.height);
+	}
+
 
   if(totalPoints < 2) {return;} //making sure the points fade out completely
 
@@ -99,6 +103,7 @@ function setPoints(can) {
     ctx.stroke()
   }
 }
+
 
 
 function setCanvasSize() {
@@ -148,16 +153,6 @@ function setupCanvases() {
 	$canvas = $('#maincanvas');
 	setCanvasSize();
 
-	function mousedown_handler(e) {
-		var coords = getLocalCoords(canvasEl, getEventCoords(e));
-		mouseDown = true;
-
-		setPoints(canvas.draw, coords.x, coords.y, true);
-		recompositeCanvases();
-
-		return false;
-	};
-
   function mousemove_handler(e) {
 		var coords = getLocalCoords(canvasEl, getEventCoords(e));
 
@@ -173,7 +168,7 @@ function setupCanvases() {
   function animate() {
     if(!mouseDown && points.length < 2) {return}
     reqAF(animate);
-    setPoints(canvas.draw);
+    setPoints(canvas.draw, options.clearSwipe);
     recompositeCanvases();
   }
 
@@ -233,5 +228,9 @@ $(function() {
 		loadImages();
 	}
 });
+
+$('#maintain_wipe').on('change', function() {
+	options.clearSwipe = !$(this).is(':checked');
+})
 
 })();
