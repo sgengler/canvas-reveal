@@ -4,7 +4,7 @@
 
 var image = { // back and front images
 		'back': { 'url':'images/background.jpg', 'img':null },
-		'front': { 'url':'images/foreground.jpg', 'img':null }
+		'front': { 'url':'images/foreground-ice.jpg', 'img':null }
 	},
 	canvas = {'temp':null, 'draw':null},
 	$canvas,
@@ -90,7 +90,7 @@ function setPoints(can) {
   if(totalPoints < 2) {return;} //making sure the points fade out completely
 
   for(var i=1;i<points.length;i++){
-    var lineW = Math.sqrt(Math.pow(points[i].x - points[i - 1].x, 2) + Math.pow(points[i].y - points[i - 1].y, 2));
+    var lineW = Math.sqrt(Math.pow(points[i].x - points[i - 1].x, 2) + Math.pow(points[i].y - points[i - 1].y, 2)); //euclidean norm!!!
     ctx.lineWidth = 25 + 75 * Math.max(1 - lineW / 50, 0);
     ctx.strokeStyle = "rgba(0,0,0," + Math.max(1 - (now - points[i].time) / 1000, 0) + ")";
 
