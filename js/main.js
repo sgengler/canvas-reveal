@@ -17,7 +17,7 @@ var image = { // back and front images
 	imgHeight;
 
 var options = {
-	fadeTimer: 1000,
+	fadeTimer: 3000,
 	clearSwipe: true
 }
 
@@ -94,7 +94,7 @@ function setPoints(can, clearSwipe) {
 
   for(var i=1;i<points.length;i++){
     var lineW = Math.sqrt(Math.pow(points[i].x - points[i - 1].x, 2) + Math.pow(points[i].y - points[i - 1].y, 2)); //euclidean norm!!!
-    ctx.lineWidth = 25 + 75 * Math.max(1 - lineW / 50, 0);
+    ctx.lineWidth = 40 + 75 * Math.max(1 - lineW / 50, 0);
     ctx.strokeStyle = "rgba(0,0,0," + Math.max(1 - (now - points[i].time) / 1000, 0) + ")";
 
     ctx.beginPath();
