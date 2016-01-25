@@ -3,7 +3,7 @@
 (function() {
 
 var image = { // back and front images
-		'back': { 'url':'images/background.jpg', 'img':null },
+		'back': { 'url':'images/background-ice.jpg', 'img':null },
 		'front': { 'url':'images/foreground-ice.jpg', 'img':null }
 	},
 	canvas = {'temp':null, 'draw':null},
@@ -77,7 +77,6 @@ function setPoints(can) {
       break;
     }
   }
-
   var totalPoints = points.length,
 		ctx = can.getContext('2d');
 
